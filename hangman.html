@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <style>
+        .hangman-container {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .word {
+            font-size: 2em;
+            letter-spacing: 0.1em;
+        }
+        .message {
+            font-size: 1.5em;
+            color: red;
+        }
+        .letters {
+            margin-top: 20px;
+        }
+        .letter {
+            display: inline-block;
+            margin: 0 5px;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        .disabled {
+            color: gray;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hangman-container">
+        <h1>Hangman Game</h1>
+        <div id="word" class="word"></div>
+        <div id="message" class="message"></div>
+        <div id="letters" class="letters"></div>
+    </div>
+    <script>
+        const wordToGuess = "TEST";
+        let guessedWord = Array(wordToGuess.length).fill("_");
+        let attemptsLeft = 6;
+
+        const wordElement = document.getElementById("word");
+        const messageElement = document.getElementById("message");
+        const lettersElement = document.getElementById("letters");
+
+        function updateWordDisplay() {
+            wordElement.textContent = guessedWord.join(" ");
+        }
+
+        function updateLettersDisplay() {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            lettersElement.innerHTML = "";
+            for (let letter of letters) {
+                const span = document.createElement("span");
+                span.textContent = letter;
+                span.classList.add("letter");
+                span.addEventListener("click", () => guessLetter(letter));
+                lettersElement.appendChild(span);
+            }
+        }
+
+        function guessLetter(letter) {
+            const indices = [];
+            for (let i = 0; i < wordToGuess.length; i++) {
+                if (wordToGuess[i] === letter) {
+                    indices.push(i);
+                }
+            }
+
+            if (indices.length > 0) {
+                for (let index of indices) {
+                    guessedWord[index] = letter;
+                }
+                if (guessedWord.join("") === wordToGuess) {
+                    messageElement.textContent = "Congratulations! You've won!";
+                    disableLetters();
+                }
+            } else {
+                attemptsLeft--;
+                if (attemptsLeft === 0) {
+                    messageElement.textContent = "Game Over! The word was " + wordToGuess;
+                    disableLetters();
+                } else {
+                    messageElement.textContent = `Incorrect! You have ${attemptsLeft} attempts left.`;
+                }
+            }
+            updateWordDisplay();
+        }
+
+        function disableLetters() {
+            const letterElements = document.querySelectorAll(".letter");
+            letterElements.forEach(element => element.classList.add("disabled"));
+        }
+
+        updateWordDisplay();
+        updateLettersDisplay();
+    </script>
+</body>
+</html>
