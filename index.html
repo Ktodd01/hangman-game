@@ -5,101 +5,151 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hangman Game</title>
     <style>
-        .hangman-container {
+        body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            color: #333;
         }
-        .word {
+        h1 {
+            font-size: 3em;
+            margin: 20px 0;
+            animation: fadeIn 1s ease-in-out;
+        }
+        h2 {
             font-size: 2em;
-            letter-spacing: 0.1em;
+            margin: 10px 0;
         }
-        .message {
-            font-size: 1.5em;
-            color: red;
+        #hangman-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .letters {
-            margin-top: 20px;
+        #word-container, #letters-container {
+            margin: 10px 0;
+        }
+        #word {
+            font-size: 2em;
+            letter-spacing: 10px;
+            animation: fadeIn 2s ease-in-out;
+        }
+        #letters {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 600px;
         }
         .letter {
-            display: inline-block;
-            margin: 0 5px;
-            font-size: 1.5em;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin: 5px;
             cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
         }
-        .disabled {
-            color: gray;
-            pointer-events: none;
+        .letter:hover {
+            background-color: #ddd;
+            transform: scale(1.1);
+        }
+        .hidden {
+            display: none;
+        }
+        #message {
+            font-size: 1.5em;
+            margin-top: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="hangman-container">
-        <h1>Hangman Game</h1>
-        <div id="word" class="word"></div>
-        <div id="message" class="message"></div>
-        <div id="letters" class="letters"></div>
+    <h1>Hangman Game</h1>
+    <h2>Date: June 5th, 2024</h2>
+    <div id="hangman-container">
+        <div id="word-container">
+            <div id="word"></div>
+        </div>
+        <div id="letters-container">
+            <div id="letters"></div>
+        </div>
+        <div id="message"></div>
     </div>
+
     <script>
-        const wordToGuess = "BACON";
-        let guessedWord = Array(wordToGuess.length).fill("_");
-        let attemptsLeft = 6;
+        const phrase = "Life Liberty and Justice"; // Change this phrase to update the word/phrase for the game
+        const phraseArray = phrase.toUpperCase().split('');
+        const guessedLetters = new Set();
+        let incorrectGuesses = 0;
+        const maxGuesses = 6;
 
-        const wordElement = document.getElementById("word");
-        const messageElement = document.getElementById("message");
-        const lettersElement = document.getElementById("letters");
+        const wordContainer = document.getElementById('word');
+        const lettersContainer = document.getElementById('letters');
+        const messageContainer = document.getElementById('message');
 
-        function updateWordDisplay() {
-            wordElement.textContent = guessedWord.join(" ");
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        function displayWord() {
+            wordContainer.innerHTML = '';
+            phraseArray.forEach(char => {
+                const charElement = document.createElement('span');
+                charElement.textContent = guessedLetters.has(char) || char === ' ' ? char : '_';
+                wordContainer.appendChild(charElement);
+            });
         }
 
-        function updateLettersDisplay() {
-            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            lettersElement.innerHTML = "";
-            for (let letter of letters) {
-                const span = document.createElement("span");
-                span.textContent = letter;
-                span.classList.add("letter");
-                span.addEventListener("click", () => guessLetter(letter));
-                lettersElement.appendChild(span);
-            }
+        function displayLetters() {
+            lettersContainer.innerHTML = '';
+            alphabet.split('').forEach(char => {
+                const letterButton = document.createElement('button');
+                letterButton.textContent = char;
+                letterButton.classList.add('letter');
+                letterButton.onclick = () => guessLetter(char);
+                if (guessedLetters.has(char)) {
+                    letterButton.disabled = true;
+                }
+                lettersContainer.appendChild(letterButton);
+            });
         }
 
-        function guessLetter(letter) {
-            const indices = [];
-            for (let i = 0; i < wordToGuess.length; i++) {
-                if (wordToGuess[i] === letter) {
-                    indices.push(i);
-                }
-            }
-
-            if (indices.length > 0) {
-                for (let index of indices) {
-                    guessedWord[index] = letter;
-                }
-                if (guessedWord.join("") === wordToGuess) {
-                    messageElement.textContent = "Congratulations! You've won!";
-                    disableLetters();
+        function guessLetter(char) {
+            guessedLetters.add(char);
+            if (phraseArray.includes(char)) {
+                displayWord();
+                if (phraseArray.every(char => char === ' ' || guessedLetters.has(char))) {
+                    messageContainer.textContent = 'Congratulations! You guessed the phrase!';
                 }
             } else {
-                attemptsLeft--;
-                if (attemptsLeft === 0) {
-                    messageElement.textContent = "Game Over! The word was " + wordToGuess;
-                    disableLetters();
-                } else {
-                    messageElement.textContent = `Incorrect! You have ${attemptsLeft} attempts left.`;
+                incorrectGuesses++;
+                if (incorrectGuesses >= maxGuesses) {
+                    messageContainer.textContent = 'Game Over! The phrase was: ' + phrase;
+                    disableAllLetters();
                 }
             }
-            updateWordDisplay();
+            displayLetters();
         }
 
-        function disableLetters() {
-            const letterElements = document.querySelectorAll(".letter");
-            letterElements.forEach(element => element.classList.add("disabled"));
+        function disableAllLetters() {
+            const letterButtons = document.querySelectorAll('.letter');
+            letterButtons.forEach(button => {
+                button.disabled = true;
+            });
         }
 
-        updateWordDisplay();
-        updateLettersDisplay();
+        displayWord();
+        displayLetters();
     </script>
 </body>
 </html>
