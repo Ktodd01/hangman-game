@@ -3,193 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Invaders</title>
+    <title>Hangman Game</title>
     <style>
         body {
-            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: black;
-            color: white;
-            overflow: hidden;
+            margin: 0;
+            flex-direction: column;
+            color: #333;
         }
-        #gameCanvas {
-            background: black;
-            border: 1px solid white;
+        h1 {
+            font-size: 3em;
+            margin: 20px 0;
+            animation: fadeIn 1s ease-in-out;
         }
-        #gameInfo {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 18px;
+        h2 {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        #hangman-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #word-container, #letters-container {
+            margin: 10px 0;
+        }
+        #word {
+            font-size: 2em;
+            letter-spacing: 10px;
+            animation: fadeIn 2s ease-in-out;
+        }
+        #letters {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 600px;
+        }
+        .letter {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .letter:hover {
+            background-color: #ddd;
+            transform: scale(1.1);
+        }
+        .hidden {
+            display: none;
+        }
+        #message {
+            font-size: 1.5em;
+            margin-top: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="gameInfo">
-        <p>Use arrow keys to move and spacebar to shoot</p>
-        <p>Score: <span id="score">0</span></p>
+    <h1>Hangman Game</h1>
+    <h2>Date: June 5th, 2024</h2>
+    <div id="hangman-container">
+        <div id="word-container">
+            <div id="word"></div>
+        </div>
+        <div id="letters-container">
+            <div id="letters"></div>
+        </div>
+        <div id="message"></div>
     </div>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const phrase = "Life Liberty and Justice"; // Change this phrase to update the word/phrase for the game
+        const phraseArray = phrase.toUpperCase().split('');
+        const guessedLetters = new Set();
+        let incorrectGuesses = 0;
+        const maxGuesses = 6;
 
-        let ship = {
-            x: canvas.width / 2 - 15,
-            y: canvas.height - 30,
-            width: 30,
-            height: 30,
-            dx: 5,
-            bullets: []
-        };
+        const wordContainer = document.getElementById('word');
+        const lettersContainer = document.getElementById('letters');
+        const messageContainer = document.getElementById('message');
 
-        let invaders = [];
-        const rows = 5;
-        const cols = 8;
-        const invaderWidth = 30;
-        const invaderHeight = 30;
-        const invaderGap = 10;
-        const invaderXStart = (canvas.width - (cols * (invaderWidth + invaderGap))) / 2;
-        const invaderYStart = 30;
-        const invaderSpeed = 1;
-        const invaderDrop = 20;
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-        let score = 0;
+        function displayWord() {
+            wordContainer.innerHTML = '';
+            phraseArray.forEach(char => {
+                const charElement = document.createElement('span');
+                charElement.textContent = guessedLetters.has(char) || char === ' ' ? char : '_';
+                wordContainer.appendChild(charElement);
+            });
+        }
 
-        function createInvaders() {
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    invaders.push({
-                        x: invaderXStart + col * (invaderWidth + invaderGap),
-                        y: invaderYStart + row * (invaderHeight + invaderGap),
-                        width: invaderWidth,
-                        height: invaderHeight,
-                        dx: invaderSpeed
-                    });
+        function displayLetters() {
+            lettersContainer.innerHTML = '';
+            alphabet.split('').forEach(char => {
+                const letterButton = document.createElement('button');
+                letterButton.textContent = char;
+                letterButton.classList.add('letter');
+                letterButton.onclick = () => guessLetter(char);
+                if (guessedLetters.has(char)) {
+                    letterButton.disabled = true;
+                }
+                lettersContainer.appendChild(letterButton);
+            });
+        }
+
+        function guessLetter(char) {
+            guessedLetters.add(char);
+            if (phraseArray.includes(char)) {
+                displayWord();
+                if (phraseArray.every(char => char === ' ' || guessedLetters.has(char))) {
+                    messageContainer.textContent = 'Congratulations! You guessed the phrase!';
+                }
+            } else {
+                incorrectGuesses++;
+                if (incorrectGuesses >= maxGuesses) {
+                    messageContainer.textContent = 'Game Over! The phrase was: ' + phrase;
+                    disableAllLetters();
                 }
             }
+            displayLetters();
         }
 
-        function drawShip() {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
-        }
-
-        function drawInvaders() {
-            invaders.forEach(invader => {
-                ctx.fillStyle = 'red';
-                ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
+        function disableAllLetters() {
+            const letterButtons = document.querySelectorAll('.letter');
+            letterButtons.forEach(button => {
+                button.disabled = true;
             });
         }
 
-        function drawBullets() {
-            ship.bullets.forEach(bullet => {
-                ctx.fillStyle = 'yellow';
-                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-            });
-        }
-
-        function moveShip() {
-            if (leftPressed && ship.x > 0) {
-                ship.x -= ship.dx;
-            }
-            if (rightPressed && ship.x < canvas.width - ship.width) {
-                ship.x += ship.dx;
-            }
-        }
-
-        function moveBullets() {
-            ship.bullets.forEach(bullet => {
-                bullet.y -= bullet.dy;
-            });
-            ship.bullets = ship.bullets.filter(bullet => bullet.y > 0);
-        }
-
-        function moveInvaders() {
-            invaders.forEach(invader => {
-                invader.x += invader.dx;
-            });
-
-            const rightMostInvader = invaders.reduce((max, invader) => (invader.x > max ? invader.x : max), 0);
-            const leftMostInvader = invaders.reduce((min, invader) => (invader.x < min ? invader.x : min), canvas.width);
-
-            if (rightMostInvader + invaderWidth >= canvas.width || leftMostInvader <= 0) {
-                invaders.forEach(invader => {
-                    invader.dx *= -1;
-                    invader.y += invaderDrop;
-                });
-            }
-        }
-
-        function detectCollisions() {
-            ship.bullets.forEach(bullet => {
-                invaders.forEach((invader, invaderIndex) => {
-                    if (
-                        bullet.x < invader.x + invader.width &&
-                        bullet.x + bullet.width > invader.x &&
-                        bullet.y < invader.y + invader.height &&
-                        bullet.y + bullet.height > invader.y
-                    ) {
-                        invaders.splice(invaderIndex, 1);
-                        bullet.y = -10; // Move bullet offscreen
-                        score += 10;
-                        document.getElementById('score').textContent = score;
-                    }
-                });
-            });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawShip();
-            drawInvaders();
-            drawBullets();
-        }
-
-        function update() {
-            moveShip();
-            moveBullets();
-            moveInvaders();
-            detectCollisions();
-            draw();
-            requestAnimationFrame(update);
-        }
-
-        createInvaders();
-        update();
-
-        let leftPressed = false;
-        let rightPressed = false;
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') {
-                leftPressed = true;
-            }
-            if (e.key === 'ArrowRight') {
-                rightPressed = true;
-            }
-            if (e.key === ' ') {
-                ship.bullets.push({
-                    x: ship.x + ship.width / 2 - 2.5,
-                    y: ship.y,
-                    width: 5,
-                    height: 10,
-                    dy: 5
-                });
-            }
-        });
-
-        document.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft') {
-                leftPressed = false;
-            }
-            if (e.key === 'ArrowRight') {
-                rightPressed = false;
-            }
-        });
+        displayWord();
+        displayLetters();
     </script>
 </body>
 </html>
